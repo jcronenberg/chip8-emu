@@ -83,7 +83,7 @@ int disassemble8080Op(unsigned char *codebuffer, int pc)
         case 0x0f: printf("RRC"); break;
 
         case 0x10: printf("NOP"); break;
-        case 0x11: printf("LXI    D,#$%02x%02x", code[1], code[2]); opbytes = 3; break;
+        case 0x11: printf("LXI    D,#$%02x%02x", code[2], code[1]); opbytes = 3; break;
         case 0x12: printf("STAX   D"); break;
         case 0x13: printf("INX    D"); break;
         case 0x14: printf("INR    D"); break;
