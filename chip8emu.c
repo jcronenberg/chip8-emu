@@ -4,17 +4,33 @@
 #include "GL/freeglut.h"
 #include "GL/gl.h"
 
-#define SCREEN_WIDTH 50
-#define SCREEN_HEIGHT 50
+#define SCREEN_WIDTH 4
+#define SCREEN_HEIGHT 5
 
 uint8_t screenData[SCREEN_WIDTH][SCREEN_HEIGHT][3];
 
-const int modifier = 10;
+const int modifier = 30;
 int counter = 0;
 
+int number0[5][4] = {
+{1,1,1,1},
+{1,0,0,1},
+{1,0,0,1},
+{1,0,0,1},
+{1,1,1,1}
+};
 
-int display_width = SCREEN_WIDTH * 10;
-int display_height = SCREEN_HEIGHT * 10;
+int number1[5][4] = {
+{0,0,1,0},
+{0,1,1,0},
+{0,0,1,0},
+{0,0,1,0},
+{0,1,1,1}
+};
+
+
+int display_width = SCREEN_WIDTH * modifier;
+int display_height = SCREEN_HEIGHT * modifier;
 
 void drawPixel(int x, int y)
 {
@@ -26,11 +42,11 @@ void drawPixel(int x, int y)
     glEnd();
 }
 
-void updateQuads(bool show)
+void updateQuads(int show[][4])
 {
     for(int y = 0; y < SCREEN_HEIGHT; ++y) {
         for(int x = 0; x < SCREEN_WIDTH; ++x) {
-            if (show)
+            if (show[y][x])
                 glColor3f(1.0f,1.0f,1.0f);
             else
 	        glColor3f(0.0f,0.0f,0.0f);	
@@ -57,12 +73,15 @@ void display(void)
 {
     glClear(GL_COLOR_BUFFER_BIT);
 
-    updateQuads(counter % 2);
+    if (counter % 2)
+        updateQuads(number1);
+    else
+        updateQuads(number0);
     counter++;
 
     glutSwapBuffers();
 
-    usleep(100000);
+    sleep(1);
 }
 
 int main(int argc, char **argv)
