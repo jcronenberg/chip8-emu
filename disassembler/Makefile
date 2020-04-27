@@ -4,8 +4,8 @@ PROGS = $(patsubst %.c,%,$(SRCS))
 
 all: $(PROGS)
 
-%: %.cpp
-	g++ $(CFLAGS)  -o $@ $<
+%: %.c
+	gcc $(CFLAGS)  -o $@ $<
 
 clean:
 	rm -f $(PROGS)
