@@ -12,22 +12,6 @@ uint8_t screenData[SCREEN_WIDTH][SCREEN_HEIGHT][3];
 const int modifier = 10;
 int counter = 0;
 
-int number0[5][4] = {
-{1,1,1,1},
-{1,0,0,1},
-{1,0,0,1},
-{1,0,0,1},
-{1,1,1,1}
-};
-
-int number1[5][4] = {
-{0,0,1,0},
-{0,1,1,0},
-{0,0,1,0},
-{0,0,1,0},
-{0,1,1,1}
-};
-
 int blank_screen[SCREEN_WIDTH][SCREEN_HEIGHT];
 
 int display_width = SCREEN_WIDTH * modifier;
@@ -73,12 +57,6 @@ void reshape_window(GLsizei w, GLsizei h)
 void display(void)
 {
     glClear(GL_COLOR_BUFFER_BIT);
-
-    /* if (counter % 2)
-        updateQuads(number1);
-    else
-        updateQuads(number0);
-    counter++; */
 
     for (int i = 0; i < SCREEN_WIDTH; i++) {
         if (counter / SCREEN_HEIGHT % 2 == 0)
