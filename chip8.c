@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 #include "GL/freeglut.h"
 #include "GL/gl.h"
 
@@ -60,7 +61,7 @@ void reshape_window(GLsizei w, GLsizei h)
 void keyboardDown(unsigned char input, int x, int y)
 {
     if(input == 27)    // esc
-    	exit(0);
+    	exit(EXIT_SUCCESS);
 
     if(input == '1')		key[0x1] = 1;
     else if(input == '2')	key[0x2] = 1;
@@ -129,7 +130,7 @@ void initializeSystem()
 
     //Load fontset
     for (int i = 0; i < FONTSETLENGTH; i++)
-        memory[i] = 0;//chip8Fontset[i];
+        memory[i] = chip8Fontset[i];
     
     //Reset timers
     delayTimer = 0;
@@ -176,17 +177,231 @@ int loadGame(char *fn)
 void emulateCycle()
 {
     //Fetch opcode
-    opcode = memory[pc] | memory[pc + 1];
+    opcode = memory[pc] << 8 | memory[pc + 1];
 
-    switch (opcode) {
-    case 0xA2F0:
+    //Flag to inc pc by the standard value of 2
+    //as it is the case most of the time
+    int incPC = 1;
+
+    //Declare variables for X and Y and reset them
+    int X = (opcode & 0x0F00) >> 8;
+    int Y = (opcode & 0x00F0) >> 4;
+
+    printf("Emulating Cycle. PC: %i, opcode: 0x%x, X: %i, Y: %i, V[X]: %i, V[Y]: %i\n", pc, opcode, X, Y, V[X], V[Y]); //debug
+
+    //Decode opcode
+    switch (opcode & 0xF000) {
+
+    case 0x0000:
+        switch (opcode & 0x000F) {
+
+        case 0x0000: //0x00E0: Clears the screen
+            if (opcode & 0x00E0) {
+                for (int i = 0; i < GFXSIZE; i++)
+                    gfx[i] = 0;
+
+                drawFlag = 1;
+            } else {
+                fprintf(stderr, "Unknown opcode: 0x%x\n", opcode);
+            }
+            break;
+        case 0x000E: //0x00EE: Returns from subroutine
+            sp--;
+            pc = stack[sp];
+            stack[sp] = 0;
+            break;
+        default:
+            fprintf(stderr, "Unknown opcode: 0x%x\n", opcode);
+        }
+        break;
+    case 0x1000:
+        pc = opcode & 0x0FFF;
+        incPC = 0;
+    case 0x2000:
+        stack[sp] = pc;
+        sp++;
+        pc = opcode & 0x0FFF;
+        incPC = 0;
+        break;
+    case 0x3000:
+        if (V[X] == (opcode & 0x00FF))
+            pc += 2;
+
+        break;
+    case 0x4000:
+        if (V[X] != (opcode & 0x00FF))
+            pc += 2;
+
+        break;
+    case 0x5000:
+        if (V[X] == V[Y])
+            pc += 2;
+
+        break;
+    case 0x6000:
+        V[X] = opcode & 0x00FF;
+        break;
+    case 0x7000:
+        V[X] += opcode & 0x00FF;
+        break;
+    case 0x8000:
+        switch (opcode & 0x000F) {
+        case 0x0000:
+            V[X] = V[Y];
+            break;
+        case 0x0001:
+            V[X] = V[X] | V[Y];
+            break;
+        case 0x0002:
+            V[X] = V[X] & V[Y];
+            break;
+        case 0x0003:
+            V[X] = V[X] ^ V[Y];
+            break;
+        case 0x0004:
+            if (X + Y > 0xFF)
+                V[0xF] = 1; //Set carry flag
+            else
+                V[0xF] = 0;
+
+            V[X] += V[Y];
+            break;
+        case 0x0005:
+            if (X - Y < 0)
+                V[0xF] = 0; //Set carry flag
+            else
+                V[0xF] = 1;
+
+            V[X] -= V[Y];
+            break;
+        case 0x0006:
+            V[0xF] = V[X] & 0x1;
+            V[X] >>= 1;
+            break;
+        case 0x0007:
+            if (Y - X < 0)
+                V[0xF] = 0; //Set carry flag
+            else
+                V[0xF] = 1;
+
+            V[X] = V[Y] - V[X];
+            break;
+        case 0x000E:
+            V[0xF] = V[X] >> 1;
+            V[X] <<= 1;
+            break;
+        default:
+            fprintf(stderr, "Unknown opcode: 0x%x\n", opcode);
+        }
+        break;
+    case 0x9000:
+        if (V[X] != V[Y])
+            pc += 2;
+        break;
+    case 0xA000:
         I = opcode & 0x0FFF;
+        break;
+    case 0xB000:
+        pc = V[0] + (opcode & 0x0FFF);
+        incPC = 0;
+        break;
+    case 0xC000:
+        srand(time(NULL));
+        V[X] = rand() & (opcode & 0x00FF);
+        break;
+    case 0xD000:
+        fprintf(stderr, "Draw not implemented yet");
+        break;
+    case 0xE000:
+        switch (opcode & 0x00FF) {
+        case 0x009E:
+            if (key[X])
+                pc += 2;
+            break;
+        case 0x00A1:
+            if (!key[X])
+                pc += 2;
+            break;
+
+        default:
+            fprintf(stderr, "Unknown opcode: 0x%x\n", opcode);
+        }
+        break;
+    case 0xF000:
+        switch (opcode & 0x00FF) {
+        case 0x0007:
+            V[X] = delayTimer;
+            break;
+        case 0x000A:
+            for (int i = 0; i < KEYSIZE; i++) {
+                if (key[i]) {
+                    V[X] = i;
+                    goto keypressed;
+                }
+            }
+            return;
+keypressed:
+            break;
+        case 0x0015:
+            delayTimer = V[X];
+            break;
+        case 0x0018:
+            soundTimer = V[X];
+            break;
+        case 0x001E:
+            if (I + V[X] > 0xFFF)
+                V[0xF] = 1;
+            else
+                V[0xF] = 0;
+
+            I += V[X];
+            break;
+        case 0x0029:
+            //implement
+            fprintf(stderr, "Sprite call not added yet");
+            break;
+        case 0x0033:
+            memory[I] = V[X] / 100;
+            memory[I + 1] = (V[X] / 10) % 10;
+            memory[I + 2] = (V[X] % 100) % 10;
+            break;
+        case 0x0055:
+            for (int i = 0; i <= X; i++)
+                memory[I + i] = V[X];
+
+            break;
+        case 0x0065:
+            for (int i = 0; i <= X; i++)
+                V[X] = memory[I + i];
+
+            break;
+        }
+        break;
+
+    default:
+        fprintf(stderr, "Unknown opcode: 0x%x\n", opcode);
+    }
+
+    //Inc pc if flag is set
+    if (incPC)
         pc += 2;
+
+    //Update timers
+    if (delayTimer > 0)
+        delayTimer--;
+
+    if (soundTimer > 0) {
+        if (soundTimer == 1)
+            printf("BEEP!\n");
+
+        soundTimer--;
     }
 }
 
 void display(void)
 {
+    emulateCycle();
+
     if (drawFlag) {
         printf("Drawing Frame!\n"); //debug
 

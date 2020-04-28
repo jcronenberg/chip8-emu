@@ -12,10 +12,10 @@ int main (int argc, char *argv[])
 
     if (argc > 2) {
         printf("Too many arguments\n");
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     } else if (argc == 1) {
         printf("Please specify a file to disassemble\n");
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     printf("Dissasembling file: %s\n", argv[1]);
@@ -23,7 +23,7 @@ int main (int argc, char *argv[])
     readfile = fopen(argv[1], "r");
     if (readfile == NULL) {
         printf("Error reading file\n");
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     if (fseek(readfile, 0L, SEEK_END) == 0) {
