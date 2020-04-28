@@ -4,13 +4,13 @@
 #include "GL/freeglut.h"
 #include "GL/gl.h"
 
-#define SCREEN_WIDTH 64
-#define SCREEN_HEIGHT 32
+#define SCREEN_WIDTH 224
+#define SCREEN_HEIGHT 256
 
 uint8_t screenData[SCREEN_WIDTH][SCREEN_HEIGHT][3];
 
-const int modifier = 10;
-int counter = 0, i = 0;
+const int modifier = 2;
+int counter = 0;
 
 int blank_screen[SCREEN_WIDTH][SCREEN_HEIGHT];
 
@@ -58,17 +58,14 @@ void display(void)
 {
     glClear(GL_COLOR_BUFFER_BIT);
 
-    if (counter / SCREEN_HEIGHT % 2 == 0)
-        blank_screen[i % SCREEN_WIDTH][counter % SCREEN_HEIGHT] = 1;
-    else
-        blank_screen[i % SCREEN_WIDTH][counter % SCREEN_HEIGHT] = 0;
-
-    if (i / SCREEN_WIDTH % 2 == 1) {
-        counter++;
-        i = 0;
-    } else {
-        i++;
+    for (int i = 0; i < SCREEN_WIDTH; i++) {
+        if (counter / SCREEN_HEIGHT % 2 == 0)
+            blank_screen[i % SCREEN_WIDTH][counter % SCREEN_HEIGHT] = 1;
+        else
+            blank_screen[i % SCREEN_WIDTH][counter % SCREEN_HEIGHT] = 0;
     }
+
+    counter++;
 
     updateQuads(blank_screen);
 
