@@ -4,12 +4,12 @@
 #include "GL/freeglut.h"
 #include "GL/gl.h"
 
-#define SCREEN_WIDTH 4
-#define SCREEN_HEIGHT 5
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 72
 
 uint8_t screenData[SCREEN_WIDTH][SCREEN_HEIGHT][3];
 
-const int modifier = 30;
+const int modifier = 10;
 int counter = 0;
 
 int number0[5][4] = {
@@ -28,6 +28,7 @@ int number1[5][4] = {
 {0,1,1,1}
 };
 
+int blank_screen[SCREEN_WIDTH][SCREEN_HEIGHT];
 
 int display_width = SCREEN_WIDTH * modifier;
 int display_height = SCREEN_HEIGHT * modifier;
@@ -42,11 +43,11 @@ void drawPixel(int x, int y)
     glEnd();
 }
 
-void updateQuads(int show[][4])
+void updateQuads(int show[][SCREEN_HEIGHT])
 {
-    for(int y = 0; y < SCREEN_HEIGHT; ++y) {
-        for(int x = 0; x < SCREEN_WIDTH; ++x) {
-            if (show[y][x])
+    for(int y = 0; y < SCREEN_HEIGHT; y++) {
+        for(int x = 0; x < SCREEN_WIDTH; x++) {
+            if (show[x][y])
                 glColor3f(1.0f,1.0f,1.0f);
             else
 	        glColor3f(0.0f,0.0f,0.0f);	
@@ -73,23 +74,39 @@ void display(void)
 {
     glClear(GL_COLOR_BUFFER_BIT);
 
-    if (counter % 2)
+    /* if (counter % 2)
         updateQuads(number1);
     else
         updateQuads(number0);
+    counter++; */
+
+    for (int i = 0; i < SCREEN_WIDTH; i++) {
+        if (counter / SCREEN_HEIGHT % 2 == 0)
+            blank_screen[i][counter % SCREEN_HEIGHT] = 1;
+        else
+            blank_screen[i][counter % SCREEN_HEIGHT] = 0;
+    }
+
     counter++;
+
+    updateQuads(blank_screen);
 
     glutSwapBuffers();
 
-    sleep(1);
+    usleep(10000);
 }
 
 int main(int argc, char **argv)
 {
+
+    for (int a = 0; a < SCREEN_WIDTH; a++)
+        for (int b = 0; b < SCREEN_HEIGHT; b++)
+            blank_screen[a][b] = 0;
+
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
     glutInitWindowSize(SCREEN_WIDTH * modifier, SCREEN_HEIGHT * modifier);
-    glutInitWindowPosition(100, 100);
+    glutInitWindowPosition(0, 0);
     glutCreateWindow("Chip8 Emulator");
     glutDisplayFunc(display);
     glutIdleFunc(display);
