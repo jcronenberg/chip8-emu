@@ -26,6 +26,8 @@ unsigned short sp;
 
 unsigned char key[KEYSIZE];
 
+unsigned int clockspeed;
+
 unsigned char chip8Fontset[FONTSETLENGTH] =
 { 
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0

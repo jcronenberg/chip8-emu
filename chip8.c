@@ -10,8 +10,6 @@
 #define SCREEN_WIDTH 64
 #define SCREEN_HEIGHT 32
 
-uint8_t screenData[SCREEN_WIDTH][SCREEN_HEIGHT][3];
-
 const int modifier = 20;
 int counter = 0;
 
@@ -22,24 +20,24 @@ int display_height = SCREEN_HEIGHT * modifier;
 
 void drawPixel(int x, int y)
 {
-    glBegin(GL_QUADS);
-	glVertex3f((x * modifier) + 0.0f,     (y * modifier) + 0.0f,	 0.0f);
-	glVertex3f((x * modifier) + 0.0f,     (y * modifier) + modifier, 0.0f);
-        glVertex3f((x * modifier) + modifier, (y * modifier) + modifier, 0.0f);
-	glVertex3f((x * modifier) + modifier, (y * modifier) + 0.0f,	 0.0f);
-    glEnd();
+    
 }
 
 void updateQuads(unsigned char show[])
 {
-    for(int y = 0; y < SCREEN_HEIGHT; y++) {
-        for(int x = 0; x < SCREEN_WIDTH; x++) {
-            if (show[(y * SCREEN_WIDTH) + x])
+    for(int a = 0; a < SCREEN_HEIGHT; a++) {
+        for(int b = 0; b < SCREEN_WIDTH; b++) {
+            if (show[(a * SCREEN_WIDTH) + b])
                 glColor3f(1.0f,1.0f,1.0f);
             else
 	        glColor3f(0.0f,0.0f,0.0f);	
 
-	    drawPixel(x, y);
+            glBegin(GL_QUADS);
+            glVertex3f((b * modifier),     (a * modifier),	 0.0f);
+            glVertex3f((b * modifier),     (a * modifier) + modifier, 0.0f);
+            glVertex3f((b * modifier) + modifier, (a * modifier) + modifier, 0.0f);
+            glVertex3f((b * modifier) + modifier, (a * modifier),	 0.0f);
+            glEnd();
         }
     }
 }
@@ -127,6 +125,8 @@ void initializeSystem()
         V[i] = 0;
     for (int i = 0; i < MEMORYSIZE; i++)
         memory[i] = 0;
+    for (int i = 0; i < KEYSIZE; i++)
+        key[i] = 0;
 
     //Load fontset
     for (int i = 0; i < FONTSETLENGTH; i++)
@@ -135,6 +135,9 @@ void initializeSystem()
     //Reset timers
     delayTimer = 0;
     soundTimer = 0;
+
+    //Seed rand()
+    srand(time(NULL));
 }
 
 int loadGame(char *fn)
@@ -183,11 +186,11 @@ void emulateCycle()
     //as it is the case most of the time
     int incPC = 1;
 
-    //Declare variables for X and Y and reset them
+    //Declare variables for X and Y and set them
     int X = (opcode & 0x0F00) >> 8;
     int Y = (opcode & 0x00F0) >> 4;
 
-    printf("Emulating Cycle. PC: %i, opcode: 0x%x, X: %i, Y: %i, V[X]: %i, V[Y]: %i\n", pc, opcode, X, Y, V[X], V[Y]); //debug
+    //printf("Emulating Cycle. PC: %i, opcode: 0x%x, X: %i, Y: %i, V[X]: %i, V[Y]: %i\n", pc, opcode, X, Y, V[X], V[Y]); //debug
 
     //Decode opcode
     switch (opcode & 0xF000) {
@@ -195,7 +198,7 @@ void emulateCycle()
     case 0x0000:
         switch (opcode & 0x000F) {
 
-        case 0x0000: //0x00E0: Clears the screen
+        case 0x0000:
             if (opcode & 0x00E0) {
                 for (int i = 0; i < GFXSIZE; i++)
                     gfx[i] = 0;
@@ -205,10 +208,9 @@ void emulateCycle()
                 fprintf(stderr, "Unknown opcode: 0x%x\n", opcode);
             }
             break;
-        case 0x000E: //0x00EE: Returns from subroutine
+        case 0x000E:
             sp--;
             pc = stack[sp];
-            stack[sp] = 0;
             break;
         default:
             fprintf(stderr, "Unknown opcode: 0x%x\n", opcode);
@@ -217,6 +219,7 @@ void emulateCycle()
     case 0x1000:
         pc = opcode & 0x0FFF;
         incPC = 0;
+        break;
     case 0x2000:
         stack[sp] = pc;
         sp++;
@@ -250,25 +253,25 @@ void emulateCycle()
             V[X] = V[Y];
             break;
         case 0x0001:
-            V[X] = V[X] | V[Y];
+            V[X] |= V[Y];
             break;
         case 0x0002:
-            V[X] = V[X] & V[Y];
+            V[X] &= V[Y];
             break;
         case 0x0003:
-            V[X] = V[X] ^ V[Y];
+            V[X] ^= V[Y];
             break;
         case 0x0004:
-            if (X + Y > 0xFF)
-                V[0xF] = 1; //Set carry flag
+            if (V[X] + V[Y] > 0xFF)
+                V[0xF] = 1;
             else
                 V[0xF] = 0;
 
             V[X] += V[Y];
             break;
         case 0x0005:
-            if (X - Y < 0)
-                V[0xF] = 0; //Set carry flag
+            if (V[X] - V[Y] < 0)
+                V[0xF] = 0;
             else
                 V[0xF] = 1;
 
@@ -279,7 +282,7 @@ void emulateCycle()
             V[X] >>= 1;
             break;
         case 0x0007:
-            if (Y - X < 0)
+            if (V[X] > V[Y])
                 V[0xF] = 0; //Set carry flag
             else
                 V[0xF] = 1;
@@ -287,7 +290,7 @@ void emulateCycle()
             V[X] = V[Y] - V[X];
             break;
         case 0x000E:
-            V[0xF] = V[X] >> 1;
+            V[0xF] = V[X] >> 7;
             V[X] <<= 1;
             break;
         default:
@@ -306,20 +309,42 @@ void emulateCycle()
         incPC = 0;
         break;
     case 0xC000:
-        srand(time(NULL));
-        V[X] = rand() & (opcode & 0x00FF);
+        V[X] = (rand() % (0xFF + 1)) & (opcode & 0x00FF);
         break;
     case 0xD000:
-        fprintf(stderr, "Draw not implemented yet");
+        {
+            unsigned short Vx = V[X];
+            unsigned short Vy = V[Y];
+            unsigned short height = opcode & 0x000F;
+            unsigned short spriterow;
+            V[0xF] = 0;
+
+            for (int col = 0; col < height; col++) {
+                spriterow = memory[I + col];
+
+                for (int row = 0; row < 8; row++) {
+
+                    if ((spriterow & (0x80 >> row)) != 0) {
+
+                        if (gfx[(Vx + row + ((Vy + col) * SCREEN_WIDTH))] == 1)
+                            V[0xF] = 1;
+
+                        gfx[(Vx + row + ((Vy + col) * SCREEN_WIDTH))] ^= 1;
+                    }
+                }
+            }
+
+            drawFlag = 1;
+        }
         break;
     case 0xE000:
         switch (opcode & 0x00FF) {
         case 0x009E:
-            if (key[X])
+            if (key[V[X]])
                 pc += 2;
             break;
         case 0x00A1:
-            if (!key[X])
+            if (!key[V[X]])
                 pc += 2;
             break;
 
@@ -357,8 +382,7 @@ keypressed:
             I += V[X];
             break;
         case 0x0029:
-            //implement
-            fprintf(stderr, "Sprite call not added yet");
+            I = V[X] * 0x5;
             break;
         case 0x0033:
             memory[I] = V[X] / 100;
@@ -369,12 +393,19 @@ keypressed:
             for (int i = 0; i <= X; i++)
                 memory[I + i] = V[X];
 
+            I += X + 1;
+
             break;
         case 0x0065:
             for (int i = 0; i <= X; i++)
-                V[X] = memory[I + i];
+                V[i] = memory[I + i];
+
+            I += X + 1;
 
             break;
+
+        default:
+            fprintf(stderr, "Unknown opcode: 0x%x\n", opcode);
         }
         break;
 
@@ -396,14 +427,18 @@ keypressed:
 
         soundTimer--;
     }
+
 }
 
 void display(void)
 {
+    //Initialize before clock to slow down cycle
+    clock_t before = clock();
+
     emulateCycle();
 
     if (drawFlag) {
-        printf("Drawing Frame!\n"); //debug
+        //printf("Drawing Frame!\n"); //debug
 
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -414,8 +449,13 @@ void display(void)
         drawFlag = 0;
     }
 
-    if (key[0x1])
-        drawFlag = 1;
+    //Slow down cycle
+    int nsec = 0, trigger = 10;
+    do {
+        clock_t difference = clock() - before;
+        nsec = difference * 1000000 / CLOCKS_PER_SEC;
+    } while (nsec < trigger);
+
 }
 
 int main(int argc, char **argv)
@@ -428,6 +468,8 @@ int main(int argc, char **argv)
         printf("Please specify a file to disassemble\n");
         return EXIT_FAILURE;
     }
+
+    clockspeed = 500;
 
     initializeSystem();
     if (loadGame(argv[1])) {
