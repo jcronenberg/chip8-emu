@@ -102,6 +102,7 @@ void keyboardUp(unsigned char input, int x, int y)
 
 void initializeSystem()
 {
+    fprintf(stderr, "Initializing system with default values\n");
     pc = 0x200;
     opcode = 0;
     I = 0;
@@ -129,10 +130,14 @@ void initializeSystem()
 
     //Seed rand()
     srand(time(NULL));
+
+    fprintf(stderr, "Finished initializing!\n");
 }
 
 int loadGame(char *fn)
 {
+    fprintf(stderr, "Loading game: %s\n", fn);
+
     char *buffer = NULL;
     FILE *readfile;
     long bufsize = 0;
@@ -166,6 +171,9 @@ int loadGame(char *fn)
         memory[i + 0x200] = buffer[i];
 
     free(buffer);
+
+    fprintf(stderr, "Finished loading!\n");
+    return 0;
 }
 
 int checkDelayTimer(unsigned char timer)
@@ -179,14 +187,12 @@ int checkDelayTimer(unsigned char timer)
         newTimerFlag = 0;
     }
 
-    if (timer > 0) {
-        clock_t difference = clock() - before;
-        msec = difference * 1000 / CLOCKS_PER_SEC;
+    clock_t difference = clock() - before;
+    msec = difference * 1000 / CLOCKS_PER_SEC;
 
-        if (msec >= 16) {
-            timer--;
-            newTimerFlag = 1;
-        }
+    if (msec >= 16) {
+        timer--;
+        newTimerFlag = 1;
     }
 
     return timer;
@@ -214,14 +220,10 @@ void emulateCycle()
         switch (opcode & 0x000F) {
 
         case 0x0000:
-            if (opcode & 0x00E0) {
-                for (int i = 0; i < GFXSIZE; i++)
-                    gfx[i] = 0;
+            for (int i = 0; i < GFXSIZE; i++)
+                gfx[i] = 0;
 
-                drawFlag = 1;
-            } else {
-                fprintf(stderr, "Unknown opcode: 0x%x\n", opcode);
-            }
+            drawFlag = 1;
             break;
         case 0x000E:
             sp--;
@@ -298,7 +300,7 @@ void emulateCycle()
             break;
         case 0x0007:
             if (V[X] > V[Y])
-                V[0xF] = 0; //Set carry flag
+                V[0xF] = 0;
             else
                 V[0xF] = 1;
 
@@ -406,7 +408,7 @@ keypressed:
             break;
         case 0x0055:
             for (int i = 0; i <= X; i++)
-                memory[I + i] = V[X];
+                memory[I + i] = V[i];
 
             I += X + 1;
 
@@ -453,17 +455,12 @@ void display(void)
     emulateCycle();
 
     if (drawFlag) {
-        //printf("Drawing Frame!\n"); //debug
-
         glClear(GL_COLOR_BUFFER_BIT);
-
         updateQuads(gfx);
-
         glutSwapBuffers();
 
         drawFlag = 0;
     }
-    usleep(100);
 
     //Slow down cycle
     int nsec = 0, trigger = 10;
@@ -489,7 +486,7 @@ int main(int argc, char **argv)
 
     initializeSystem();
     if (loadGame(argv[1])) {
-        fprintf(stderr, "Loading Game failed");
+        fprintf(stderr, "Loading Game failed!\n");
         return EXIT_FAILURE;
     }
 
