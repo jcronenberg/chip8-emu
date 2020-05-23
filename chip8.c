@@ -18,11 +18,6 @@ int drawFlag = 1;
 int display_width = SCREEN_WIDTH * modifier;
 int display_height = SCREEN_HEIGHT * modifier;
 
-void drawPixel(int x, int y)
-{
-    
-}
-
 void updateQuads(unsigned char show[])
 {
     for(int a = 0; a < SCREEN_HEIGHT; a++) {
@@ -80,8 +75,6 @@ void keyboardDown(unsigned char input, int x, int y)
     else if(input == 'x')	key[0x0] = 1;
     else if(input == 'c')	key[0xB] = 1;
     else if(input == 'v')	key[0xF] = 1;
-
-    printf("Pressed key: %c\n", input); //debug
 }
 
 void keyboardUp(unsigned char input, int x, int y)
@@ -105,8 +98,6 @@ void keyboardUp(unsigned char input, int x, int y)
     else if(input == 'x')	key[0x0] = 0;
     else if(input == 'c')	key[0xB] = 0;
     else if(input == 'v')	key[0xF] = 0;
-
-    printf("Released key: %c\n", input); //debug
 }
 
 void initializeSystem()
@@ -175,6 +166,30 @@ int loadGame(char *fn)
         memory[i + 0x200] = buffer[i];
 
     free(buffer);
+}
+
+int checkDelayTimer(unsigned char timer)
+{
+    static clock_t before;
+    static int newTimerFlag = 1;
+    int msec = 0;
+
+    if(newTimerFlag) {
+        before = clock();
+        newTimerFlag = 0;
+    }
+
+    if (timer > 0) {
+        clock_t difference = clock() - before;
+        msec = difference * 1000 / CLOCKS_PER_SEC;
+
+        if (msec >= 16) {
+            timer--;
+            newTimerFlag = 1;
+        }
+    }
+
+    return timer;
 }
 
 void emulateCycle()
@@ -387,7 +402,7 @@ keypressed:
         case 0x0033:
             memory[I] = V[X] / 100;
             memory[I + 1] = (V[X] / 10) % 10;
-            memory[I + 2] = (V[X] % 100) % 10;
+            memory[I + 2] = V[X] % 10;
             break;
         case 0x0055:
             for (int i = 0; i <= X; i++)
@@ -419,7 +434,7 @@ keypressed:
 
     //Update timers
     if (delayTimer > 0)
-        delayTimer--;
+        delayTimer = checkDelayTimer(delayTimer);
 
     if (soundTimer > 0) {
         if (soundTimer == 1)
@@ -448,12 +463,13 @@ void display(void)
 
         drawFlag = 0;
     }
+    usleep(100);
 
     //Slow down cycle
     int nsec = 0, trigger = 10;
     do {
         clock_t difference = clock() - before;
-        nsec = difference * 1000000 / CLOCKS_PER_SEC;
+        nsec = difference * 10000 / CLOCKS_PER_SEC;
     } while (nsec < trigger);
 
 }
