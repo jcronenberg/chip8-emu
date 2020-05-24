@@ -11,18 +11,16 @@
 #define SCREEN_HEIGHT 32
 
 const int modifier = 20;
-int counter = 0;
+static int drawFlag = 1;
 
-int drawFlag = 1;
+static int display_width = SCREEN_WIDTH * modifier;
+static int display_height = SCREEN_HEIGHT * modifier;
 
-int display_width = SCREEN_WIDTH * modifier;
-int display_height = SCREEN_HEIGHT * modifier;
-
-void updateQuads(unsigned char show[])
+static void updateQuads()
 {
     for(int a = 0; a < SCREEN_HEIGHT; a++) {
         for(int b = 0; b < SCREEN_WIDTH; b++) {
-            if (show[(a * SCREEN_WIDTH) + b])
+            if (gfx[(a * SCREEN_WIDTH) + b])
                 glColor3f(1.0f,1.0f,1.0f);
             else
 	        glColor3f(0.0f,0.0f,0.0f);	
@@ -37,7 +35,7 @@ void updateQuads(unsigned char show[])
     }
 }
 
-void reshape_window(GLsizei w, GLsizei h)
+static void reshape_window(GLsizei w, GLsizei h)
 {
     glClearColor(0.0f, 0.0f, 0.5f, 0.0f);
     glMatrixMode(GL_PROJECTION);
@@ -51,7 +49,7 @@ void reshape_window(GLsizei w, GLsizei h)
     display_height = h;
 }
 
-void keyboardDown(unsigned char input, int x, int y)
+static void keyboardDown(unsigned char input, int x, int y)
 {
     if(input == 27)    // esc
     	exit(EXIT_SUCCESS);
@@ -77,7 +75,7 @@ void keyboardDown(unsigned char input, int x, int y)
     else if(input == 'v')	key[0xF] = 1;
 }
 
-void keyboardUp(unsigned char input, int x, int y)
+static void keyboardUp(unsigned char input, int x, int y)
 {
     if(input == '1')		key[0x1] = 0;
     else if(input == '2')	key[0x2] = 0;
@@ -100,7 +98,7 @@ void keyboardUp(unsigned char input, int x, int y)
     else if(input == 'v')	key[0xF] = 0;
 }
 
-void initializeSystem()
+static void initializeSystem()
 {
     fprintf(stderr, "Initializing system with default values\n");
     pc = 0x200;
@@ -134,7 +132,7 @@ void initializeSystem()
     fprintf(stderr, "Finished initializing!\n");
 }
 
-int loadGame(char *fn)
+static int loadGame(char *fn)
 {
     fprintf(stderr, "Loading game: %s\n", fn);
 
@@ -176,7 +174,7 @@ int loadGame(char *fn)
     return 0;
 }
 
-int checkDelayTimer(unsigned char timer)
+static int checkDelayTimer(unsigned char timer)
 {
     static clock_t before;
     static int newTimerFlag = 1;
@@ -198,7 +196,7 @@ int checkDelayTimer(unsigned char timer)
     return timer;
 }
 
-void emulateCycle()
+static void emulateCycle()
 {
     //Fetch opcode
     opcode = memory[pc] << 8 | memory[pc + 1];
@@ -210,8 +208,6 @@ void emulateCycle()
     //Declare variables for X and Y and set them
     int X = (opcode & 0x0F00) >> 8;
     int Y = (opcode & 0x00F0) >> 4;
-
-    //printf("Emulating Cycle. PC: %i, opcode: 0x%x, X: %i, Y: %i, V[X]: %i, V[Y]: %i\n", pc, opcode, X, Y, V[X], V[Y]); //debug
 
     //Decode opcode
     switch (opcode & 0xF000) {
@@ -439,15 +435,14 @@ keypressed:
         delayTimer = checkDelayTimer(delayTimer);
 
     if (soundTimer > 0) {
-        if (soundTimer == 1)
-            printf("BEEP!\n");
+        if (soundTimer > 1)
+            fprintf(stderr, "BEEP!\n");
 
         soundTimer--;
     }
-
 }
 
-void display(void)
+static void display(void)
 {
     //Initialize before clock to slow down cycle
     clock_t before = clock();
@@ -456,7 +451,7 @@ void display(void)
 
     if (drawFlag) {
         glClear(GL_COLOR_BUFFER_BIT);
-        updateQuads(gfx);
+        updateQuads();
         glutSwapBuffers();
 
         drawFlag = 0;
@@ -478,11 +473,9 @@ int main(int argc, char **argv)
         printf("Too many arguments\n");
         return EXIT_FAILURE;
     } else if (argc < 2) {
-        printf("Please specify a file to disassemble\n");
+        printf("Please specify a ROM to play\n");
         return EXIT_FAILURE;
     }
-
-    clockspeed = 500;
 
     initializeSystem();
     if (loadGame(argv[1])) {
