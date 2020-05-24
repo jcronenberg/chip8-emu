@@ -5,7 +5,7 @@ PROGS = $(patsubst %.c,%,$(SRCS))
 all: $(PROGS)
 
 %: %.c
-	gcc $(CFLAGS)  -o $@ $< -lm -lGL -lGLU -lglut -lGLEW -lXi -lXmu
+	gcc $(CFLAGS)  -o $@ $< -lGL -lGLU -lglut
 
 clean:
 	rm -f $(PROGS)
