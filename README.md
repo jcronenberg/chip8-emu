@@ -1,7 +1,7 @@
 # chip8-emu
 A CHIP-8 (S-CHIP-compatible) Emulator
 
-Dependecies:
+Dependencies:
 `make gcc freeglut`
 
 Compile:
