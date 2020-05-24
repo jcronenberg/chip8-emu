@@ -338,11 +338,10 @@ static void emulateCycle()
                 for (int row = 0; row < 8; row++) {
 
                     if ((spriterow & (0x80 >> row)) != 0) {
-
-                        if (gfx[(Vx + row + ((Vy + col) * SCREEN_WIDTH))] == 1)
+                        if (gfx[Vx + row + (Vy + col) * SCREEN_WIDTH % (64 * 32)] == 1)
                             V[0xF] = 1;
 
-                        gfx[(Vx + row + ((Vy + col) * SCREEN_WIDTH))] ^= 1;
+                        gfx[Vx + row + (Vy + col) * SCREEN_WIDTH % (64 * 32)] ^= 1;
                     }
                 }
             }
