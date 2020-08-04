@@ -23,7 +23,7 @@ static void updateQuads()
             if (gfx[(a * SCREEN_WIDTH) + b])
                 glColor3f(1.0f,1.0f,1.0f);
             else
-	        glColor3f(0.0f,0.0f,0.0f);	
+	        glColor3f(0.0f,0.0f,0.0f);
 
             glBegin(GL_QUADS);
             glVertex3f((b * modifier),     (a * modifier),	 0.0f);
@@ -40,10 +40,10 @@ static void reshape_window(GLsizei w, GLsizei h)
     glClearColor(0.0f, 0.0f, 0.5f, 0.0f);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluOrtho2D(0, w, h, 0);        
+    gluOrtho2D(0, w, h, 0);
     glMatrixMode(GL_MODELVIEW);
     glViewport(0, 0, w, h);
-    
+
     // Resize quad
     display_width = w;
     display_height = h;
@@ -121,7 +121,7 @@ static void initializeSystem()
     //Load fontset
     for (int i = 0; i < FONTSETLENGTH; i++)
         memory[i] = chip8Fontset[i];
-    
+
     //Reset timers
     delayTimer = 0;
     soundTimer = 0;
