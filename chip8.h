@@ -6,6 +6,8 @@
 #define STACKSIZE 16
 #define KEYSIZE 16
 #define FONTSETLENGTH 80
+#define SCREEN_WIDTH 64
+#define SCREEN_HEIGHT 32
 
 unsigned short opcode;
 

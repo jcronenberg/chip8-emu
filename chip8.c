@@ -9,9 +9,6 @@
 
 #include "chip8.h"
 
-#define SCREEN_WIDTH 64
-#define SCREEN_HEIGHT 32
-
 static int modifier = 20;
 static int drawFlag = 1;
 static int debugFlag = 0;
@@ -24,7 +21,10 @@ static void usage()
 {
     printf("Chip 8 Emulator:\n");
     printf("  chip8 [OPTIONS] [ROM]\n");
-    printf("    -d, --debug: Enable debug mode\n");
+    printf("    -d, --debug:       Enable debug mode\n");
+    printf("    --mod [Argument]:  Change resolution scaling\n");
+    printf("                       Default is 20 which results in a resolution of 1280x640\n");
+    printf("                       (32 * mod x 64 * mod)\n");
 }
 
 // Update pixels
