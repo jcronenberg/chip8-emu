@@ -16,6 +16,12 @@ static int drawFlag = 1;
 static int display_width = SCREEN_WIDTH * modifier;
 static int display_height = SCREEN_HEIGHT * modifier;
 
+// Print usage
+static void usage() {
+    printf("Chip 8 Emulator:\n");
+    printf("  chip8 [ROM]\n");
+}
+
 // Update pixels
 static void updateQuads()
 {
@@ -471,10 +477,12 @@ int main(int argc, char **argv)
 
     // Check arguments
     if (argc > 2) {
-        printf("Too many arguments\n");
+        printf("Too many arguments\n\n");
+        usage();
         return EXIT_FAILURE;
     } else if (argc < 2) {
-        printf("Please specify a ROM to play\n");
+        printf("Please specify a ROM to play\n\n");
+        usage();
         return EXIT_FAILURE;
     }
 
