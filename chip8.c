@@ -16,6 +16,7 @@ static int drawFlag = 1;
 static int display_width = SCREEN_WIDTH * modifier;
 static int display_height = SCREEN_HEIGHT * modifier;
 
+// Update pixels
 static void updateQuads()
 {
     for(int a = 0; a < SCREEN_HEIGHT; a++) {
@@ -468,6 +469,7 @@ static void display(void)
 int main(int argc, char **argv)
 {
 
+    // Check arguments
     if (argc > 2) {
         printf("Too many arguments\n");
         return EXIT_FAILURE;
@@ -482,6 +484,7 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
+    // glut setup
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
 
