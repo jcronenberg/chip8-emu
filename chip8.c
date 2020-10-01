@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <time.h>
 #include "GL/freeglut.h"
 #include "GL/gl.h"
@@ -12,6 +13,7 @@
 
 const int modifier = 20;
 static int drawFlag = 1;
+static int debugFlag = 0;
 
 static int display_width = SCREEN_WIDTH * modifier;
 static int display_height = SCREEN_HEIGHT * modifier;
@@ -203,7 +205,7 @@ static int checkDelayTimer(unsigned char timer)
     return timer;
 }
 
-static void emulateCycle()
+static void emulateCycle(int debugFlag)
 {
     //Fetch opcode
     opcode = memory[pc] << 8 | memory[pc + 1];
@@ -215,6 +217,12 @@ static void emulateCycle()
     //Declare variables for X and Y and set them
     int X = (opcode & 0x0F00) >> 8;
     int Y = (opcode & 0x00F0) >> 4;
+
+    if (debugFlag) {
+      fprintf(stderr, "opcode: 0x%x\n", opcode);
+      fprintf(stderr, "V[X]: %x\n", V[X]);
+      fprintf(stderr, "V[Y]: %x\n", V[X]);
+    }
 
     //Decode opcode
     switch (opcode & 0xF000) {
@@ -269,6 +277,7 @@ static void emulateCycle()
         break;
     case 0x8000:
         switch (opcode & 0x000F) {
+
         case 0x0000:
             V[X] = V[Y];
             break;
@@ -453,7 +462,7 @@ static void display(void)
     //Initialize before clock to slow down cycle
     clock_t before = clock();
 
-    emulateCycle();
+    emulateCycle(debugFlag);
 
     if (drawFlag) {
         glClear(GL_COLOR_BUFFER_BIT);
@@ -474,20 +483,35 @@ static void display(void)
 
 int main(int argc, char **argv)
 {
+    int opt, nonopts;
+
+    int index = 0;
+    static struct option longopts[] = {
+        {"debug", no_argument, 0, 'd'},
+    };
+
+    while ((opt = getopt_long(argc, argv, "d", longopts, &index)) != -1) {
+        switch(opt) {
+        case 'd':
+            debugFlag = 1;
+            break;
+        }
+    }
+    nonopts = argc - optind;
 
     // Check arguments
-    if (argc > 2) {
+    if (nonopts > 1) {
         printf("Too many arguments\n\n");
         usage();
         return EXIT_FAILURE;
-    } else if (argc < 2) {
+    } else if (nonopts < 1) {
         printf("Please specify a ROM to play\n\n");
         usage();
         return EXIT_FAILURE;
     }
 
     initializeSystem();
-    if (loadGame(argv[1])) {
+    if (loadGame(argv[optind])) {
         fprintf(stderr, "Loading Game failed!\n");
         return EXIT_FAILURE;
     }
