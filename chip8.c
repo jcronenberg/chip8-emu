@@ -1,3 +1,4 @@
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -11,12 +12,12 @@
 #define SCREEN_WIDTH 64
 #define SCREEN_HEIGHT 32
 
-const int modifier = 20;
+static int modifier = 20;
 static int drawFlag = 1;
 static int debugFlag = 0;
 
-static int display_width = SCREEN_WIDTH * modifier;
-static int display_height = SCREEN_HEIGHT * modifier;
+static int display_width;
+static int display_height;
 
 // Print usage
 static void usage()
@@ -207,7 +208,7 @@ static int checkDelayTimer(unsigned char timer)
     return timer;
 }
 
-static void emulateCycle(int debugFlag)
+static void emulateCycle()
 {
     //Fetch opcode
     opcode = memory[pc] << 8 | memory[pc + 1];
@@ -464,7 +465,7 @@ static void display(void)
     //Initialize before clock to slow down cycle
     clock_t before = clock();
 
-    emulateCycle(debugFlag);
+    emulateCycle();
 
     if (drawFlag) {
         glClear(GL_COLOR_BUFFER_BIT);
@@ -489,16 +490,24 @@ int main(int argc, char **argv)
 
     int index = 0;
     static struct option longopts[] = {
-        {"debug", no_argument, 0, 'd'},
+        {"mod", required_argument, 0, 'm'},
+        {"debug", no_argument, 0, 'd'}
     };
 
-    while ((opt = getopt_long(argc, argv, "d", longopts, &index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "dm", longopts, &index)) != -1) {
         switch(opt) {
         case 'd':
             debugFlag = 1;
             break;
+        case 'm':
+            modifier = atoi(optarg);
+            break;
         }
     }
+
+    display_width = SCREEN_WIDTH * modifier;
+    display_height = SCREEN_HEIGHT * modifier;
+
     nonopts = argc - optind;
 
     // Check arguments
