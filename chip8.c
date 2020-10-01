@@ -19,9 +19,11 @@ static int display_width = SCREEN_WIDTH * modifier;
 static int display_height = SCREEN_HEIGHT * modifier;
 
 // Print usage
-static void usage() {
+static void usage()
+{
     printf("Chip 8 Emulator:\n");
-    printf("  chip8 [ROM]\n");
+    printf("  chip8 [OPTIONS] [ROM]\n");
+    printf("    -d, --debug: Enable debug mode\n");
 }
 
 // Update pixels
