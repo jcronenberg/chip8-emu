@@ -24,7 +24,7 @@ static void usage()
     printf("    -d, --debug:       Enable debug mode\n");
     printf("    --mod [Argument]:  Change resolution scaling\n");
     printf("                       Default is 20 which results in a resolution of 1280x640\n");
-    printf("                       (32 * mod x 64 * mod)\n");
+    printf("                       (64 * mod x 32 * mod)\n");
 }
 
 // Update pixels
